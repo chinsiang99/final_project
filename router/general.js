@@ -1,5 +1,6 @@
 const express = require('express');
 let books = Object.values(require("./booksdb.js"));
+// let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
@@ -36,11 +37,25 @@ public_users.post("/register", (req,res) => {
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
   //Write your code here
-  return res.status(200).json(
-    {
-      "books": books
+  let bookResolved = new Promise((resolve,reject)=>{
+    if(books.length){
+      resolve(books)
+    }else{
+      reject("No books available")
     }
-  );
+  })
+
+  bookResolved.then(data=>{
+    return res.status(200).json(
+      {
+        "books": data
+      }
+    )
+  }).catch(err=>{
+    return res.status(404).json({
+      message: err
+    })
+  })
 });
 
 // Get book details based on ISBN
@@ -48,14 +63,22 @@ public_users.get('/isbn/:isbn',function (req, res) {
   //Write your code here
   const isbn = req.params.isbn;
 
-  if(isbn > books.length){
-    return res.status(400).json({
-      message: "Invalid isbn value"
-    })
-  }
+  let bookResolved = new Promise((resolve,reject)=>{
+    if(isbn > books.length){
+      reject("Invalid isbn value");
+    }
 
-  return res.status(200).json({bookDetails: books[+isbn - 1]});
- });
+    resolve(books[+isbn - 1])
+  })
+
+  bookResolved.then(data=>{
+    return res.status(200).json({bookDetails: data});
+  }).catch(err=>{
+      return res.status(400).json({
+        message: err
+      })
+  })
+});
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
@@ -66,8 +89,24 @@ public_users.get('/author/:author',function (req, res) {
   const filtered = books.filter(book => {
     return book.author === author
   })
+  let bookFiltered = new Promise((resolve,reject)=>{
+    const filtered = books.filter(book => {
+      return book.author === author
+    })
+    if(filtered.length){
+      resolve(filtered)
+    }else{
+      reject(`No books with author name : ${author}`)
+    }
+  })
 
-  return res.status(200).json({booksFiltered: filtered});
+  bookFiltered.then(data=>{
+    return res.status(200).json({booksFiltered: data});
+  }).catch(err=>{
+    return res.status(404).json({message: err});
+  })
+
+  
 });
 
 // Get all books based on title
@@ -79,7 +118,22 @@ public_users.get('/title/:title',function (req, res) {
     return book.title === title
   })
 
-  return res.status(200).json({booksFiltered: filtered});
+  let bookFiltered = new Promise((resolve,reject)=>{
+    const filtered = books.filter(book => {
+      return book.title === title
+    })
+    if(filtered.length){
+      resolve(filtered)
+    }else{
+      reject(`No books with title name : ${title}`)
+    }
+  })
+
+  bookFiltered.then(data=>{
+    return res.status(200).json({booksFiltered: data});
+  }).catch(err=>{
+    return res.status(404).json({message: err});
+  })
 });
 
 //  Get book review
