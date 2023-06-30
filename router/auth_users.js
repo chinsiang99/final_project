@@ -96,6 +96,34 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
   }
 });
 
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  //Write your code here
+  const isbn = req.params.isbn;
+  const username = req.user.data.username;
+
+  if (!username) {
+    res.status(401).json({message: 'User not authenticated'});
+    return;
+  }
+
+  // Find the book by ISBN
+  const book = books[+isbn - 1];
+
+  if (!book) {
+    res.status(404).json({message: 'Book not found'});
+    return;
+  }
+
+  // Check if a review exists for the same username and ISBN
+  if (book.reviews[username]) {
+    // Delete the review for the authenticated user
+    delete book.reviews[username];
+    res.json({message: 'Review deleted successfully'});
+  } else {
+    res.status(404).json({message: 'Review not found'});
+  }
+})
+
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
